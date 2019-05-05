@@ -55,6 +55,7 @@ g + geom_histogram(fill="green", alpha=.65) + labs(title="Total daily steps", x=
 ```
 
 ![](PA1_template_files/figure-html/unnamed-chunk-6-1.png)<!-- -->
+  
 Calculate summary statistics for total daily steps:
 
 ```r
@@ -192,7 +193,7 @@ Add weekday/weekend mark to data:
 ```r
 data$weekPart <- factor(ifelse(weekdays(data$date) == "Sunday" | weekdays(data$date) == "Saturday", "weekend", "weekday"))
 ```
-<!-- Make a panel plot containing a time series plot (i.e. type = "l") of the 5-minute interval (x-axis) and the average number of steps taken, averaged across all weekday days or weekend days (y-axis). -->
+Calculate average interval step counts for weekday/weekend:
 
 ```r
 meanStepsPerWeekPart <- data %>%

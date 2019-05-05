@@ -37,6 +37,7 @@ Plot histogram of total daily step count:
 g <- ggplot(data = meanStepsPerDay, aes(x=steps))
 g + geom_histogram(fill="green", alpha=.65) + labs(title="Total daily steps", x="Steps", y="Days")
 ```  
+  
 Calculate summary statistics for total daily steps:
 ```{r echo=TRUE, warning=FALSE}
 summary(meanStepsPerDay$steps)
