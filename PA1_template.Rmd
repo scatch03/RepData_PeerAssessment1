@@ -5,21 +5,135 @@ output:
     keep_md: true
 ---
 
-
 ## Loading and preprocessing the data
-
-
+Load data:
+```{r echo=TRUE}
+data <- read.csv("activity.csv", header=TRUE, colClasses=c("numeric", "character", "numeric"))
+```
+Parse dates:
+```{r echo=TRUE}
+data$date <- as.Date(data$date, "%Y-%m-%d")
+```
+Data sample:
+```{r echo=TRUE}
+head(data)
+```
+***
 
 ## What is mean total number of steps taken per day?
-
+Load necessary libraries:
+```{r echo=TRUE, warning=FALSE, message=FALSE}
+library(ggplot2)
+library(dplyr)
+```
+Calculate total step count for each date:
+```{r echo=TRUE, warning=FALSE, message=FALSE}
+meanStepsPerDay <- data %>%
+  group_by(date) %>%
+  summarise(steps=sum(steps, na.rm = TRUE))
+```
+Plot histogram of total daily step count: 
+``` {r echo=TRUE, warning=FALSE, message=FALSE}
+g <- ggplot(data = meanStepsPerDay, aes(x=steps))
+g + geom_histogram(fill="green", alpha=.65) + labs(title="Total daily steps", x="Steps", y="Days")
+```  
+Calculate summary statistics for total daily steps:
+```{r echo=TRUE, warning=FALSE}
+summary(meanStepsPerDay$steps)
+```
+***
 
 
 ## What is the average daily activity pattern?
-
+Calculate average step count for each interval (across all dates):
+```{r echo=TRUE, warning=FALSE, message=FALSE}
+meanStepsPerInterval <- data %>%
+  group_by(interval) %>%
+  summarise(steps=mean(steps, na.rm = TRUE))
+```
+Plot mean interval steps series:
+```{r echo=TRUE, warning=FALSE, message=FALSE}
+g <- ggplot(meanStepsPerInterval, aes(x=interval, y=steps))
+g + geom_line(col="green", alpha=.65) + labs(title="Mean interval steps", x="Interval", y="Steps")
+```
+  
+Find interval with maximal average number of steps (across all dates):
+```{r echo=TRUE, warning=FALSE, message=FALSE}
+meanStepsPerInterval$interval[which.max(meanStepsPerInterval$steps)]
+```
+Average steps count for this interval:
+```{r echo=TRUE, warning=FALSE, message=FALSE}
+meanStepsPerInterval$steps[which.max(meanStepsPerInterval$steps)]
+```
+***
 
 
 ## Imputing missing values
-
+Total number of NA records:
+```{r echo=TRUE, warning=FALSE, message=FALSE}
+sum(is.na(data$steps))
+```
+Define imputing policy for missing values in data set (set equal to a mean for an interval):
+```{r echo=TRUE, message=FALSE}
+impute <- function(data, meanStepsPerInterval) {
+  result <- data.frame(data)
+  for (i in seq(1, dim(result)[1])){
+    if(!is.na(result[i, "steps"])) {
+      next
+    }
+    interval <- result[i, "interval"]
+    result[i, "steps"] <- meanStepsPerInterval[meanStepsPerInterval$interval == interval, "steps"]
+  }
+  return(result)
+}
+```
+<!-- Create a new dataset that is equal to the original dataset but with the missing data filled in. -->
+Impute NA values and create separate data frame for obtained data:
+```{r echo=TRUE, warning=FALSE, message=FALSE}
+imputedData <- impute(data, meanStepsPerInterval)
+```
+Number of NAs on imputed data:
+```{r echo=TRUE, warning=FALSE, message=FALSE}
+sum(is.na(imputedData$steps))
+```
+Calculate total step count for each date on imputed data:
+```{r echo=TRUE, warning=FALSE, message=FALSE}
+imputedMeanStepsPerDay <- imputedData %>%
+  group_by(date) %>%
+  summarise(steps=sum(steps, na.rm = TRUE))
+```
+Plot histogram of total daily step count for imputed data: 
+``` {r echo=TRUE, warning=FALSE, message=FALSE}
+g <- ggplot(data = imputedMeanStepsPerDay, aes(x=steps))
+g + geom_histogram(fill="green", alpha=.65) + labs(title="Total daily steps(imputed)", x="Steps", y="Days")
+```  
+  
+Calculate summary statistics for total daily steps(imputed):
+```{r echo=TRUE, warning=FALSE}
+summary(imputedMeanStepsPerDay$steps)
+```
+Original statistics on unemputed data:
+```{r echo=TRUE, warning=FALSE}
+summary(meanStepsPerDay$steps)
+```
+Both mean and median increased for imputed data.
+***
 
 
 ## Are there differences in activity patterns between weekdays and weekends?
+Add weekday/weekend mark to data:
+```{r echo=TRUE, warning=FALSE}
+data$weekPart <- factor(ifelse(weekdays(data$date) == "Sunday" | weekdays(data$date) == "Saturday", "weekend", "weekday"))
+```
+Calculate average interval step counts for weekday/weekend:
+```{r echo=TRUE, warning=FALSE}
+meanStepsPerWeekPart <- data %>%
+  group_by(interval, weekPart) %>%
+  summarise(steps = mean(steps, na.rm = TRUE))
+```
+Plot average interval step count series for weekdays/weekends:
+```{r echo=TRUE, warning=FALSE, message=FALSE}
+library(lattice)
+xyplot(steps ~ interval|weekPart, meanStepsPerWeekPart, layout=c(1,2), type="l")
+```
+
